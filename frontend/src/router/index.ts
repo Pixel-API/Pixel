@@ -395,6 +395,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/pools/monitor',
+    name: 'AdminPoolHealthMonitor',
+    component: () => import('@/views/admin/PoolHealthMonitorView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Pool Health Monitor',
+      titleKey: 'admin.poolHealth.title',
+      descriptionKey: 'admin.poolHealth.description'
+    }
+  },
+  {
     path: '/admin/channels',
     redirect: '/admin/channels/pricing'
   },

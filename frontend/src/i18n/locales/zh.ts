@@ -380,6 +380,7 @@ export default {
     channelPricing: '渠道定价',
     channelMonitor: '渠道监控',
     channelStatus: '渠道状态',
+    poolHealth: '账号池看板',
   },
 
   // Auth
@@ -2751,6 +2752,72 @@ export default {
           description: '说明',
           descriptionPlaceholder: '可选：说明这个模板的用途和来源（抓包日期等）'
         }
+      }
+    },
+
+    // Pool Health Monitor
+    poolHealth: {
+      kicker: 'OpenAI / Codex',
+      title: '账号池健康看板',
+      description: '集中查看管理员账号池的可用账号、限流状态和 Codex 5小时/7天用量快照。',
+      refresh: '刷新',
+      lastUpdated: '更新时间',
+      searchPlaceholder: '搜索账号池名称...',
+      allHealth: '全部状态',
+      snapshotHint: 'Codex 用量来自最近一次账号使用或主动检测后的快照。',
+      codex5h: '5小时窗口',
+      codex7d: '7天窗口',
+      ungrouped: '未分组账号',
+      noPoolDescription: '暂无账号池说明',
+      neverUsed: '从未使用',
+      yes: '是',
+      no: '否',
+      loadFailed: '加载账号池健康数据失败',
+      accountDetails: '账号明细',
+      selectPoolHint: '选择上方账号池后查看账号状态。',
+      openAccounts: '打开账号管理',
+      selectedPoolSubtitle: '共 {total} 个账号，{schedulable} 个可调度，{problem} 个需关注。',
+      emptyTitle: '暂无账号池数据',
+      emptyDescription: '当前没有可展示的 OpenAI 账号池或账号。',
+      noAccountsTitle: '该账号池暂无账号',
+      noAccountsDescription: '可以在账号管理里把 OpenAI/Codex 账号加入此分组。',
+      rateLimitedCount: '限流 {count} 个',
+      summary: {
+        pools: '账号池',
+        poolsHint: '共 {total} 个 OpenAI/Codex 账号',
+        schedulable: '可调度账号',
+        activeHint: '启用账号 {active} 个',
+        problem: '需关注账号',
+        rateLimitedHint: '其中限流 {count} 个',
+        codexUsage: 'Codex 用量',
+        codexUsageHint: '5小时 / 7天平均占用'
+      },
+      metrics: {
+        total: '总数',
+        active: '启用',
+        schedulable: '可用',
+        problem: '异常'
+      },
+      health: {
+        healthy: '健康',
+        warning: '关注',
+        critical: '严重',
+        empty: '空池'
+      },
+      accountStatus: {
+        ready: '可调度',
+        paused: '已暂停',
+        inactive: '未启用',
+        rateLimited: '限流中'
+      },
+      columns: {
+        account: '账号',
+        status: '状态',
+        schedulable: '可调度',
+        codex5h: '5小时',
+        codex7d: '7天',
+        lastUsed: '最近使用',
+        error: '错误信息'
       }
     },
 

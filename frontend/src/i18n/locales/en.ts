@@ -380,6 +380,7 @@ export default {
     channelPricing: 'Channel Pricing',
     channelMonitor: 'Channel Monitor',
     channelStatus: 'Channel Status',
+    poolHealth: 'Pool Health',
   },
 
   // Auth
@@ -2674,6 +2675,72 @@ export default {
           description: 'Description',
           descriptionPlaceholder: 'Optional: what this template is for, capture date, etc.'
         }
+      }
+    },
+
+    // Pool Health Monitor
+    poolHealth: {
+      kicker: 'OpenAI / Codex',
+      title: 'Account Pool Health',
+      description: 'Review admin pool capacity, schedulable accounts, rate limits, and Codex 5h/7d usage snapshots.',
+      refresh: 'Refresh',
+      lastUpdated: 'Updated',
+      searchPlaceholder: 'Search pools...',
+      allHealth: 'All statuses',
+      snapshotHint: 'Codex usage reflects the latest account usage or active check snapshot.',
+      codex5h: '5h window',
+      codex7d: '7d window',
+      ungrouped: 'Ungrouped accounts',
+      noPoolDescription: 'No pool description',
+      neverUsed: 'Never used',
+      yes: 'Yes',
+      no: 'No',
+      loadFailed: 'Failed to load pool health data',
+      accountDetails: 'Account details',
+      selectPoolHint: 'Select a pool above to review account status.',
+      openAccounts: 'Open accounts',
+      selectedPoolSubtitle: '{total} accounts, {schedulable} schedulable, {problem} need attention.',
+      emptyTitle: 'No pool data',
+      emptyDescription: 'There are no OpenAI pools or accounts to display.',
+      noAccountsTitle: 'No accounts in this pool',
+      noAccountsDescription: 'Add OpenAI/Codex accounts to this group from Account Management.',
+      rateLimitedCount: '{count} rate limited',
+      summary: {
+        pools: 'Pools',
+        poolsHint: '{total} OpenAI/Codex accounts',
+        schedulable: 'Schedulable',
+        activeHint: '{active} active accounts',
+        problem: 'Needs attention',
+        rateLimitedHint: '{count} rate limited',
+        codexUsage: 'Codex usage',
+        codexUsageHint: 'Average 5h / 7d utilization'
+      },
+      metrics: {
+        total: 'Total',
+        active: 'Active',
+        schedulable: 'Ready',
+        problem: 'Issues'
+      },
+      health: {
+        healthy: 'Healthy',
+        warning: 'Warning',
+        critical: 'Critical',
+        empty: 'Empty'
+      },
+      accountStatus: {
+        ready: 'Ready',
+        paused: 'Paused',
+        inactive: 'Inactive',
+        rateLimited: 'Rate limited'
+      },
+      columns: {
+        account: 'Account',
+        status: 'Status',
+        schedulable: 'Schedulable',
+        codex5h: '5h',
+        codex7d: '7d',
+        lastUsed: 'Last used',
+        error: 'Error'
       }
     },
 

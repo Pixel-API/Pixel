@@ -22,17 +22,17 @@ func init() {
 
 func TestInjectSiteTitle(t *testing.T) {
 	t.Run("replaces_title_with_site_name", func(t *testing.T) {
-		html := []byte(`<html><head><title>Sub2API - AI API Gateway</title></head><body></body></html>`)
+		html := []byte(`<html><head><title>MaxAPI - AI API Gateway</title></head><body></body></html>`)
 		settingsJSON := []byte(`{"site_name":"MyCustomSite"}`)
 
 		result := injectSiteTitle(html, settingsJSON)
 
 		assert.Contains(t, string(result), "<title>MyCustomSite - AI API Gateway</title>")
-		assert.NotContains(t, string(result), "Sub2API")
+		assert.NotContains(t, string(result), "MaxAPI")
 	})
 
 	t.Run("returns_unchanged_when_site_name_empty", func(t *testing.T) {
-		html := []byte(`<html><head><title>Sub2API - AI API Gateway</title></head><body></body></html>`)
+		html := []byte(`<html><head><title>MaxAPI - AI API Gateway</title></head><body></body></html>`)
 		settingsJSON := []byte(`{"site_name":""}`)
 
 		result := injectSiteTitle(html, settingsJSON)
@@ -41,7 +41,7 @@ func TestInjectSiteTitle(t *testing.T) {
 	})
 
 	t.Run("returns_unchanged_when_site_name_missing", func(t *testing.T) {
-		html := []byte(`<html><head><title>Sub2API - AI API Gateway</title></head><body></body></html>`)
+		html := []byte(`<html><head><title>MaxAPI - AI API Gateway</title></head><body></body></html>`)
 		settingsJSON := []byte(`{"other_field":"value"}`)
 
 		result := injectSiteTitle(html, settingsJSON)
@@ -50,7 +50,7 @@ func TestInjectSiteTitle(t *testing.T) {
 	})
 
 	t.Run("returns_unchanged_when_invalid_json", func(t *testing.T) {
-		html := []byte(`<html><head><title>Sub2API - AI API Gateway</title></head><body></body></html>`)
+		html := []byte(`<html><head><title>MaxAPI - AI API Gateway</title></head><body></body></html>`)
 		settingsJSON := []byte(`{invalid json}`)
 
 		result := injectSiteTitle(html, settingsJSON)
@@ -70,7 +70,7 @@ func TestInjectSiteTitle(t *testing.T) {
 	t.Run("returns_unchanged_when_title_has_attributes", func(t *testing.T) {
 		// The function looks for "<title>" literally, so attributes are not supported
 		// This is acceptable since index.html uses plain <title> without attributes
-		html := []byte(`<html><head><title lang="en">Sub2API</title></head><body></body></html>`)
+		html := []byte(`<html><head><title lang="en">MaxAPI</title></head><body></body></html>`)
 		settingsJSON := []byte(`{"site_name":"NewSite"}`)
 
 		result := injectSiteTitle(html, settingsJSON)
@@ -80,7 +80,7 @@ func TestInjectSiteTitle(t *testing.T) {
 	})
 
 	t.Run("preserves_rest_of_html", func(t *testing.T) {
-		html := []byte(`<html><head><meta charset="UTF-8"><title>Sub2API</title><script src="app.js"></script></head><body><div id="app"></div></body></html>`)
+		html := []byte(`<html><head><meta charset="UTF-8"><title>MaxAPI</title><script src="app.js"></script></head><body><div id="app"></div></body></html>`)
 		settingsJSON := []byte(`{"site_name":"TestSite"}`)
 
 		result := injectSiteTitle(html, settingsJSON)
@@ -535,11 +535,11 @@ func TestFrontendServer_Middleware(t *testing.T) {
 
 		// Request for existing static file
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "/logo.png", nil)
+		req := httptest.NewRequest(http.MethodGet, "/logo.svg", nil)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Header().Get("Content-Type"), "image/png")
+		assert.Contains(t, w.Header().Get("Content-Type"), "image/svg+xml")
 	})
 }
 
@@ -589,11 +589,11 @@ func TestServeEmbeddedFrontend(t *testing.T) {
 		router.Use(middleware)
 
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "/logo.png", nil)
+		req := httptest.NewRequest(http.MethodGet, "/logo.svg", nil)
 		router.ServeHTTP(w, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		assert.Contains(t, w.Header().Get("Content-Type"), "image/png")
+		assert.Contains(t, w.Header().Get("Content-Type"), "image/svg+xml")
 	})
 
 	t.Run("serves_index_html_for_root", func(t *testing.T) {

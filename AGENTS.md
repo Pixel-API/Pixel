@@ -4,17 +4,19 @@ These rules are project-specific and apply to all agent work on Pixel.
 
 ## Development Environment
 
-- Do all feature development on the remote server `root@52.77.228.143`.
-- Main repository path: `/opt/pixel-src`.
-- Feature worktree path pattern: `/opt/pixel-worktrees/<feature-name>`.
-- Do not pull the repository to the user's Mac for development, testing, or builds unless the user explicitly asks for local work.
-- The local machine may be used only for conversation, coordination, or temporary non-source artifacts when unavoidable.
+- Do feature development, testing, and builds locally in `/Users/beetle/Desktop/code/Pixel`.
+- Use the remote server only for deployment, production builds, production service restarts, and post-deploy verification unless the user explicitly asks for server-side development.
+- Production server: `root@52.77.228.143`.
+- Server repository path for deployment: `/opt/pixel-src`.
+- Server service path: `/opt/pixel`.
+- Do not use the production runtime directory as a development workspace.
 
 ## Branch And Worktree Flow
 
-- Every new requirement starts from the latest GitHub `origin/main`.
-- Fetch first, then create a dedicated feature branch from `origin/main`.
-- Use one isolated worktree per requirement.
+- Every new requirement starts locally from the latest GitHub `origin/main`.
+- Fetch first, then create a dedicated local feature branch from `origin/main`.
+- Use one dedicated branch per requirement.
+- Use a local isolated worktree only when multiple requirements or parallel branches need to be active at the same time.
 - Branch naming:
   - `feat/<feature-name>` for features.
   - `fix/<bug-name>` for bug fixes.
@@ -26,10 +28,18 @@ These rules are project-specific and apply to all agent work on Pixel.
 Example:
 
 ```bash
-cd /opt/pixel-src
+cd /Users/beetle/Desktop/code/Pixel
 git fetch origin
-mkdir -p /opt/pixel-worktrees
-git worktree add /opt/pixel-worktrees/<feature-name> -b feat/<feature-name> origin/main
+git switch -c feat/<feature-name> origin/main
+```
+
+Optional local worktree example for parallel work:
+
+```bash
+cd /Users/beetle/Desktop/code/Pixel
+git fetch origin
+mkdir -p .worktrees
+git worktree add .worktrees/<feature-name> -b feat/<feature-name> origin/main
 ```
 
 ## Default Multi-Agent Roles
@@ -74,14 +84,14 @@ The controller agent is responsible for coordination:
 
 - Use test-driven development for code behavior changes whenever practical.
 - Write or update tests before production code for new behavior.
-- Prefer running most verification in the local development environment or an isolated test environment before handoff.
-- In this project, "local development environment" means the feature worktree on the development server or another explicitly approved non-production environment, not the production runtime directory.
-- Development-environment tests are allowed by default when they are scoped, reproducible, and do not mutate production data.
-- Allowed by default on the development environment:
+- Run development verification locally before handoff.
+- In this project, "local development environment" means the local repository or local feature worktree, not the production server runtime directory.
+- Local development tests are allowed by default when they are scoped, reproducible, and do not mutate production data.
+- Allowed by default locally:
   - Targeted backend unit tests, for example a specific Go package or `-run` pattern.
   - Targeted frontend tests, for example a specific Vitest spec.
   - Static checks such as `gofmt`, `git diff --check`, type checks, and lint checks.
-  - Frontend/backend builds when needed to prove compile correctness, as long as they run from the feature worktree and do not restart production services.
+  - Frontend/backend builds when needed to prove compile correctness, as long as they run from the local feature branch/worktree and do not restart production services.
 - Require explicit user approval before running:
   - Load tests, pressure tests, benchmark loops, or high-concurrency checks.
   - Full-suite tests known to be long-running or resource-heavy.
@@ -100,24 +110,25 @@ The controller agent is responsible for coordination:
 
 Feature branches are not deployed automatically.
 
-1. Develop in the feature worktree.
-2. Run relevant tests and verification.
+1. Develop locally on the feature branch or local feature worktree.
+2. Run relevant local tests and verification.
 3. Commit changes on the feature branch.
 4. Push the feature branch to GitHub.
 5. Tell the user the branch name, summary, changed files, and verification results.
 6. Wait for user review or explicit approval.
 7. Merge to `main` only after approval.
-8. Deploy from `main`.
-9. Build the production binary/assets.
+8. On the server, pull the approved GitHub `main`.
+9. Build the production binary/assets on the server from the pulled GitHub code.
 10. Restart services.
 11. Verify production behavior.
 12. Create a version tag when the deployment is accepted.
 
 ## Production Deployment Rules
 
-- Deployments happen on the server, not from the user's Mac.
+- Deployments happen on the server by pulling from GitHub, not by copying uncommitted local files.
 - Do not deploy a feature branch directly unless the user explicitly requests it.
 - Prefer deploying from `main` after merge.
+- Before deployment, make sure the intended commits have been pushed to GitHub.
 - Keep backups of service config files before editing operational configuration.
 - After deployment, verify:
   - `pixel.service` is active.

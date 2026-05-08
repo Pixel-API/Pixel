@@ -4697,7 +4697,7 @@
                       v-model="form.payment_product_name_prefix"
                       type="text"
                       class="input"
-                      placeholder="Sub2API"
+                      placeholder="MaxAPI"
                     />
                   </div>
                   <div>
@@ -4719,7 +4719,7 @@
                       class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-300"
                     >
                       {{
-                        (form.payment_product_name_prefix || "Sub2API") +
+                        (form.payment_product_name_prefix || "MaxAPI") +
                         " 100 " +
                         (form.payment_product_name_suffix || "CNY")
                       }}
@@ -5786,7 +5786,7 @@ const form = reactive<SettingsForm>({
   user_private_group_monthly_limit_usd: null,
   user_private_group_rate_multiplier: 1,
   user_private_group_rpm_limit: 0,
-  site_name: "Sub2API",
+  site_name: "MaxAPI",
   site_logo: "",
   site_subtitle: "Subscription to API Conversion Platform",
   api_base_url: "",

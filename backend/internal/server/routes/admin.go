@@ -27,6 +27,7 @@ func RegisterAdminRoutes(
 		registerGroupRoutes(admin, h)
 
 		// 账号管理
+		registerPoolRoutes(admin, h)
 		registerAccountRoutes(admin, h)
 		registerAccountSharePolicyRoutes(admin, h)
 
@@ -96,6 +97,13 @@ func RegisterAdminRoutes(
 
 		// 邀请返利（专属用户管理）
 		registerAffiliateRoutes(admin, h)
+	}
+}
+
+func registerPoolRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	pools := admin.Group("/pools")
+	{
+		pools.GET("/health", h.Admin.Account.GetPoolHealth)
 	}
 }
 

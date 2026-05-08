@@ -2687,23 +2687,20 @@ export default {
       lastUpdated: 'Updated',
       searchPlaceholder: 'Search pools...',
       allHealth: 'All statuses',
-      snapshotHint: 'Codex usage reflects the latest account usage or active check snapshot.',
+      snapshotHint: 'Using the pool health snapshot endpoint. Account details stay in Account Management.',
       codex5h: '5h window',
       codex7d: '7d window',
-      ungrouped: 'Ungrouped accounts',
       noPoolDescription: 'No pool description',
       neverUsed: 'Never used',
-      yes: 'Yes',
-      no: 'No',
       loadFailed: 'Failed to load pool health data',
       accountDetails: 'Account details',
-      selectPoolHint: 'Select a pool above to review account status.',
+      selectPoolHint: 'Select a pool above, then open Account Management to view accounts.',
       openAccounts: 'Open accounts',
       selectedPoolSubtitle: '{total} accounts, {schedulable} schedulable, {problem} need attention.',
       emptyTitle: 'No pool data',
-      emptyDescription: 'There are no OpenAI pools or accounts to display.',
-      noAccountsTitle: 'No accounts in this pool',
-      noAccountsDescription: 'Add OpenAI/Codex accounts to this group from Account Management.',
+      emptyDescription: 'There are no OpenAI pools to display.',
+      noAccountsTitle: 'View accounts from Account Management',
+      noAccountsDescription: 'The snapshot endpoint returns pool summaries only. Select a pool, then use Account Management for account-level details.',
       rateLimitedCount: '{count} rate limited',
       summary: {
         pools: 'Pools',
@@ -2726,21 +2723,6 @@ export default {
         warning: 'Warning',
         critical: 'Critical',
         empty: 'Empty'
-      },
-      accountStatus: {
-        ready: 'Ready',
-        paused: 'Paused',
-        inactive: 'Inactive',
-        rateLimited: 'Rate limited'
-      },
-      columns: {
-        account: 'Account',
-        status: 'Status',
-        schedulable: 'Schedulable',
-        codex5h: '5h',
-        codex7d: '7d',
-        lastUsed: 'Last used',
-        error: 'Error'
       }
     },
 

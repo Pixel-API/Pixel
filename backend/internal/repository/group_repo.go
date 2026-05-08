@@ -467,6 +467,23 @@ func (r *groupRepository) ListActiveByPlatform(ctx context.Context, platform str
 	return outGroups, nil
 }
 
+func (r *groupRepository) ListPoolHealthGroups(ctx context.Context) ([]service.Group, error) {
+	groups, err := r.client.Group.Query().
+		Order(dbent.Asc(group.FieldSortOrder), dbent.Asc(group.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	outGroups := make([]service.Group, 0, len(groups))
+	for _, item := range groups {
+		out := groupEntityToService(item)
+		if out != nil {
+			outGroups = append(outGroups, *out)
+		}
+	}
+	return outGroups, nil
+}
+
 func (r *groupRepository) ExistsByName(ctx context.Context, name string) (bool, error) {
 	return r.client.Group.Query().Where(group.NameEQ(name)).Exist(ctx)
 }

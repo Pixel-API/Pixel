@@ -39,7 +39,7 @@
         >
           <div class="flex items-start justify-between gap-3">
             <div>
-              <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <p class="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                 {{ item.label }}
               </p>
               <p class="mt-2 text-2xl font-semibold text-gray-950 dark:text-white">
@@ -104,7 +104,7 @@
       <div v-else class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
         <button
           v-for="pool in filteredPools"
-          :key="pool.id"
+          :key="String(pool.id)"
           type="button"
           class="rounded-lg border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-dark-900"
           :class="poolCardClass(pool)"
@@ -114,7 +114,7 @@
             <div class="min-w-0">
               <div class="flex min-w-0 items-center gap-2">
                 <h2 class="truncate text-base font-semibold text-gray-950 dark:text-white">
-                  {{ poolLabel(pool) }}
+                  {{ pool.name }}
                 </h2>
                 <span class="shrink-0 rounded-md px-2 py-0.5 text-xs font-medium" :class="healthBadgeClass(pool.health)">
                   {{ healthLabel(pool.health) }}
@@ -141,7 +141,7 @@
 
           <div class="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
             <span>{{ t('admin.poolHealth.rateLimitedCount', { count: pool.rateLimitedAccounts }) }}</span>
-            <span>{{ formatLastUsed(pool.lastUsedAt) }}</span>
+            <span>{{ formatLastUsed(pool.lastUsedAt ?? null) }}</span>
           </div>
         </button>
       </div>
@@ -150,7 +150,7 @@
         <div class="flex flex-col gap-2 border-b border-gray-200 p-4 dark:border-dark-700 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-base font-semibold text-gray-950 dark:text-white">
-              {{ selectedPool ? poolLabel(selectedPool) : t('admin.poolHealth.accountDetails') }}
+              {{ selectedPool ? selectedPool.name : t('admin.poolHealth.accountDetails') }}
             </h2>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {{ selectedPool ? selectedPoolSubtitle : t('admin.poolHealth.selectPoolHint') }}
@@ -162,51 +162,10 @@
           </RouterLink>
         </div>
 
-        <DataTable :columns="accountColumns" :data="selectedAccounts" :loading="loading">
-          <template #cell-name="{ row }">
-            <div class="min-w-0">
-              <p class="truncate font-medium text-gray-950 dark:text-white">{{ row.name }}</p>
-              <p class="truncate text-xs text-gray-500 dark:text-gray-400">#{{ row.id }} · {{ row.type }}</p>
-            </div>
-          </template>
-
-          <template #cell-status="{ row }">
-            <span class="rounded-md px-2 py-0.5 text-xs font-medium" :class="accountStatusClass(row)">
-              {{ accountStatusLabel(row) }}
-            </span>
-          </template>
-
-          <template #cell-schedulable="{ row }">
-            <span :class="row.isSchedulableNow ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'">
-              {{ row.isSchedulableNow ? t('admin.poolHealth.yes') : t('admin.poolHealth.no') }}
-            </span>
-          </template>
-
-          <template #cell-codex5h="{ row }">
-            {{ formatPercent(row.codex5hPercent) }}
-          </template>
-
-          <template #cell-codex7d="{ row }">
-            {{ formatPercent(row.codex7dPercent) }}
-          </template>
-
-          <template #cell-last_used_at="{ row }">
-            {{ formatLastUsed(row.last_used_at) }}
-          </template>
-
-          <template #cell-error_message="{ row }">
-            <span class="block max-w-xs truncate" :title="row.error_message || row.temp_unschedulable_reason || ''">
-              {{ row.error_message || row.temp_unschedulable_reason || '-' }}
-            </span>
-          </template>
-
-          <template #empty>
-            <EmptyState
-              :title="t('admin.poolHealth.noAccountsTitle')"
-              :description="t('admin.poolHealth.noAccountsDescription')"
-            />
-          </template>
-        </DataTable>
+        <EmptyState
+          :title="t('admin.poolHealth.noAccountsTitle')"
+          :description="t('admin.poolHealth.noAccountsDescription')"
+        />
       </div>
     </div>
   </AppLayout>
@@ -217,25 +176,14 @@ import { computed, defineComponent, h, onMounted, onUnmounted, ref, watch } from
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { adminAPI } from '@/api/admin'
-import type { Account, AdminGroup, PaginatedResponse } from '@/types'
-import type { Column } from '@/components/common/types'
+import type { PoolHealthLevel, PoolHealthPool, PoolHealthSnapshot } from '@/api/admin'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import DataTable from '@/components/common/DataTable.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 import Select from '@/components/common/Select.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { useAppStore } from '@/stores/app'
 import { extractApiErrorMessage } from '@/utils/apiError'
 import { formatDateTime, formatRelativeTime } from '@/utils/format'
-import {
-  buildPoolHealthDashboard,
-  type PoolHealthAccount,
-  type PoolHealthLevel,
-  type PoolHealthPool,
-  UNGROUPED_POOL_NAME,
-} from './poolHealth'
-
-const PAGE_SIZE = 500
 
 const MetricPill = defineComponent({
   props: {
@@ -288,21 +236,28 @@ const { t } = useI18n()
 const appStore = useAppStore()
 
 const loading = ref(false)
-const groups = ref<AdminGroup[]>([])
-const accounts = ref<Account[]>([])
-const selectedPoolId = ref<number | 'ungrouped' | null>(null)
+const snapshot = ref<PoolHealthSnapshot | null>(null)
+const selectedPoolId = ref<number | string | null>(null)
 const searchQuery = ref('')
 const healthFilter = ref<PoolHealthLevel | 'all'>('all')
-const loadedAt = ref<string | null>(null)
 let abortController: AbortController | null = null
 
-const dashboard = computed(() => buildPoolHealthDashboard(groups.value, accounts.value, loadedAt.value ? new Date(loadedAt.value) : new Date()))
-const pools = computed(() => dashboard.value.pools)
+const pools = computed(() => snapshot.value?.pools ?? [])
+const summary = computed(() => snapshot.value?.summary ?? {
+  totalPools: 0,
+  totalAccounts: 0,
+  activeAccounts: 0,
+  schedulableAccounts: 0,
+  rateLimitedAccounts: 0,
+  problemAccounts: 0,
+  codex5hAverage: null,
+  codex7dAverage: null,
+})
 
 const filteredPools = computed(() => {
   const search = searchQuery.value.trim().toLowerCase()
   return pools.value.filter((pool) => {
-    const matchesSearch = !search || poolLabel(pool).toLowerCase().includes(search) || (pool.description ?? '').toLowerCase().includes(search)
+    const matchesSearch = !search || pool.name.toLowerCase().includes(search) || (pool.description ?? '').toLowerCase().includes(search)
     const matchesHealth = healthFilter.value === 'all' || pool.health === healthFilter.value
     return matchesSearch && matchesHealth
   })
@@ -313,8 +268,11 @@ const selectedPool = computed(() => {
   return pools.value.find((pool) => pool.id === selectedPoolId.value) ?? filteredPools.value[0] ?? null
 })
 
-const selectedAccounts = computed<PoolHealthAccount[]>(() => selectedPool.value?.accounts ?? [])
-const lastUpdatedLabel = computed(() => (loadedAt.value ? formatDateTime(loadedAt.value) : '-'))
+const lastUpdatedLabel = computed(() => {
+  const value = snapshot.value?.timestamp || snapshot.value?.summary.lastUpdatedAt
+  return value ? formatDateTime(value) : '-'
+})
+
 const selectedPoolSubtitle = computed(() => {
   if (!selectedPool.value) return ''
   return t('admin.poolHealth.selectedPoolSubtitle', {
@@ -332,94 +290,40 @@ const healthOptions = computed(() => [
   { value: 'empty', label: t('admin.poolHealth.health.empty') },
 ])
 
-const summaryCards = computed<Array<{ key: string; label: string; value: string; hint: string; icon: 'database' | 'checkCircle' | 'exclamationTriangle' | 'chartBar'; iconClass: string }>>(() => {
-  const summary = dashboard.value.summary
-  return [
-    {
-      key: 'pools',
-      label: t('admin.poolHealth.summary.pools'),
-      value: String(summary.totalPools),
-      hint: t('admin.poolHealth.summary.poolsHint', { total: summary.totalAccounts }),
-      icon: 'database',
-      iconClass: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-950/40 dark:text-cyan-300',
-    },
-    {
-      key: 'schedulable',
-      label: t('admin.poolHealth.summary.schedulable'),
-      value: String(summary.schedulableAccounts),
-      hint: t('admin.poolHealth.summary.activeHint', { active: summary.activeAccounts }),
-      icon: 'checkCircle',
-      iconClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300',
-    },
-    {
-      key: 'problem',
-      label: t('admin.poolHealth.summary.problem'),
-      value: String(summary.problemAccounts),
-      hint: t('admin.poolHealth.summary.rateLimitedHint', { count: summary.rateLimitedAccounts }),
-      icon: 'exclamationTriangle',
-      iconClass: 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300',
-    },
-    {
-      key: 'usage',
-      label: t('admin.poolHealth.summary.codexUsage'),
-      value: `${formatPercent(summary.codex5hAverage)} / ${formatPercent(summary.codex7dAverage)}`,
-      hint: t('admin.poolHealth.summary.codexUsageHint'),
-      icon: 'chartBar',
-      iconClass: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300',
-    },
-  ]
-})
-
-const accountColumns = computed<Column[]>(() => [
-  { key: 'name', label: t('admin.poolHealth.columns.account'), sortable: true, class: 'min-w-[220px]' },
-  { key: 'status', label: t('admin.poolHealth.columns.status'), sortable: true },
-  { key: 'schedulable', label: t('admin.poolHealth.columns.schedulable'), sortable: true },
-  { key: 'codex5h', label: t('admin.poolHealth.columns.codex5h'), sortable: false },
-  { key: 'codex7d', label: t('admin.poolHealth.columns.codex7d'), sortable: false },
-  { key: 'last_used_at', label: t('admin.poolHealth.columns.lastUsed'), sortable: true },
-  { key: 'error_message', label: t('admin.poolHealth.columns.error'), sortable: false, class: 'min-w-[240px]' },
+const summaryCards = computed<Array<{ key: string; label: string; value: string; hint: string; icon: 'database' | 'checkCircle' | 'exclamationTriangle' | 'chartBar'; iconClass: string }>>(() => [
+  {
+    key: 'pools',
+    label: t('admin.poolHealth.summary.pools'),
+    value: String(summary.value.totalPools),
+    hint: t('admin.poolHealth.summary.poolsHint', { total: summary.value.totalAccounts }),
+    icon: 'database',
+    iconClass: 'bg-cyan-50 text-cyan-600 dark:bg-cyan-950/40 dark:text-cyan-300',
+  },
+  {
+    key: 'schedulable',
+    label: t('admin.poolHealth.summary.schedulable'),
+    value: String(summary.value.schedulableAccounts),
+    hint: t('admin.poolHealth.summary.activeHint', { active: summary.value.activeAccounts }),
+    icon: 'checkCircle',
+    iconClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300',
+  },
+  {
+    key: 'problem',
+    label: t('admin.poolHealth.summary.problem'),
+    value: String(summary.value.problemAccounts),
+    hint: t('admin.poolHealth.summary.rateLimitedHint', { count: summary.value.rateLimitedAccounts }),
+    icon: 'exclamationTriangle',
+    iconClass: 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300',
+  },
+  {
+    key: 'usage',
+    label: t('admin.poolHealth.summary.codexUsage'),
+    value: `${formatPercent(summary.value.codex5hAverage)} / ${formatPercent(summary.value.codex7dAverage)}`,
+    hint: t('admin.poolHealth.summary.codexUsageHint'),
+    icon: 'chartBar',
+    iconClass: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300',
+  },
 ])
-
-async function fetchAllOpenAIAccounts(signal: AbortSignal): Promise<Account[]> {
-  const all: Account[] = []
-  let page = 1
-  let total = Number.POSITIVE_INFINITY
-
-  while (all.length < total) {
-    const response: PaginatedResponse<Account> = await adminAPI.accounts.list(page, PAGE_SIZE, {
-      platform: 'openai',
-      sort_by: 'id',
-      sort_order: 'asc',
-    }, { signal })
-    all.push(...(response.items ?? []))
-    total = response.total ?? all.length
-    if (!response.items?.length) break
-    page += 1
-  }
-
-  return all
-}
-
-async function fetchAllOpenAIGroups(signal: AbortSignal): Promise<AdminGroup[]> {
-  const all: AdminGroup[] = []
-  let page = 1
-  let total = Number.POSITIVE_INFINITY
-
-  while (all.length < total) {
-    const response: PaginatedResponse<AdminGroup> = await adminAPI.groups.list(page, PAGE_SIZE, {
-      platform: 'openai',
-      scope: 'public',
-      sort_by: 'sort_order',
-      sort_order: 'asc',
-    }, { signal })
-    all.push(...(response.items ?? []))
-    total = response.total ?? all.length
-    if (!response.items?.length) break
-    page += 1
-  }
-
-  return all
-}
 
 async function reload() {
   abortController?.abort()
@@ -428,14 +332,9 @@ async function reload() {
   loading.value = true
 
   try {
-    const [nextGroups, nextAccounts] = await Promise.all([
-      fetchAllOpenAIGroups(ctrl.signal),
-      fetchAllOpenAIAccounts(ctrl.signal),
-    ])
+    const nextSnapshot = await adminAPI.pools.health({ signal: ctrl.signal })
     if (ctrl.signal.aborted || abortController !== ctrl) return
-    groups.value = nextGroups
-    accounts.value = nextAccounts
-    loadedAt.value = new Date().toISOString()
+    snapshot.value = nextSnapshot
   } catch (err: unknown) {
     const e = err as { name?: string; code?: string }
     if (e?.name === 'AbortError' || e?.code === 'ERR_CANCELED') return
@@ -446,10 +345,6 @@ async function reload() {
       loading.value = false
     }
   }
-}
-
-function poolLabel(pool: PoolHealthPool): string {
-  return pool.name === UNGROUPED_POOL_NAME ? t('admin.poolHealth.ungrouped') : pool.name
 }
 
 function healthLabel(health: PoolHealthLevel): string {
@@ -469,19 +364,6 @@ function poolCardClass(pool: PoolHealthPool): string {
   if (pool.health === 'critical') return 'border-red-200 dark:border-red-900/60'
   if (pool.health === 'warning') return 'border-amber-200 dark:border-amber-900/60'
   return 'border-gray-200 dark:border-dark-700'
-}
-
-function accountStatusLabel(account: PoolHealthAccount): string {
-  if (account.isRateLimitedNow) return t('admin.poolHealth.accountStatus.rateLimited')
-  if (account.status !== 'active') return t('admin.poolHealth.accountStatus.inactive')
-  if (!account.schedulable) return t('admin.poolHealth.accountStatus.paused')
-  return t('admin.poolHealth.accountStatus.ready')
-}
-
-function accountStatusClass(account: PoolHealthAccount): string {
-  if (account.isRateLimitedNow) return 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300'
-  if (account.status !== 'active' || !account.schedulable) return 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300'
-  return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300'
 }
 
 function formatPercent(value: number | null): string {

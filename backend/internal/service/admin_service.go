@@ -85,6 +85,7 @@ type AdminService interface {
 	SetAccountSchedulable(ctx context.Context, id int64, schedulable bool) (*Account, error)
 	BulkUpdateAccounts(ctx context.Context, input *BulkUpdateAccountsInput) (*BulkUpdateAccountsResult, error)
 	CheckMixedChannelRisk(ctx context.Context, currentAccountID int64, currentAccountPlatform string, groupIDs []int64) error
+	GetPoolHealthSnapshot(ctx context.Context) (*PoolHealthSnapshot, error)
 
 	// Proxy management
 	ListProxies(ctx context.Context, page, pageSize int, protocol, status, search string, sortBy, sortOrder string) ([]Proxy, int64, error)
@@ -513,24 +514,28 @@ var ErrRPMStatusUnavailable = infraerrors.New(http.StatusNotImplemented, "RPM_ST
 
 // adminServiceImpl implements AdminService
 type adminServiceImpl struct {
-	userRepo                UserRepository
-	groupRepo               GroupRepository
-	accountRepo             AccountRepository
-	proxyRepo               ProxyRepository
-	apiKeyRepo              APIKeyRepository
-	redeemCodeRepo          RedeemCodeRepository
-	userGroupRateRepo       UserGroupRateRepository
-	userRPMCache            UserRPMCache
-	billingCacheService     *BillingCacheService
-	proxyProber             ProxyExitInfoProber
-	proxyLatencyCache       ProxyLatencyCache
-	authCacheInvalidator    APIKeyAuthCacheInvalidator
-	entClient               *dbent.Client // 用于开启数据库事务
-	settingService          *SettingService
-	defaultSubAssigner      DefaultSubscriptionAssigner
-	userSubRepo             UserSubscriptionRepository
-	privacyClientFactory    PrivacyClientFactory
-	privateGroupProvisioner UserPrivateGroupProvisioner
+	userRepo                 UserRepository
+	groupRepo                GroupRepository
+	accountRepo              AccountRepository
+	proxyRepo                ProxyRepository
+	apiKeyRepo               APIKeyRepository
+	redeemCodeRepo           RedeemCodeRepository
+	userGroupRateRepo        UserGroupRateRepository
+	userRPMCache             UserRPMCache
+	billingCacheService      *BillingCacheService
+	proxyProber              ProxyExitInfoProber
+	proxyLatencyCache        ProxyLatencyCache
+	authCacheInvalidator     APIKeyAuthCacheInvalidator
+	entClient                *dbent.Client // 用于开启数据库事务
+	settingService           *SettingService
+	defaultSubAssigner       DefaultSubscriptionAssigner
+	userSubRepo              UserSubscriptionRepository
+	privacyClientFactory     PrivacyClientFactory
+	privateGroupProvisioner  UserPrivateGroupProvisioner
+	poolHealthSnapshotSource PoolHealthSnapshotSource
+	poolHealthSnapshotTTL    time.Duration
+	poolHealthSnapshotNow    func() time.Time
+	poolHealthSnapshotCache  poolHealthSnapshotCache
 }
 
 type userGroupRateBatchReader interface {
@@ -558,23 +563,26 @@ func NewAdminService(
 	privacyClientFactory PrivacyClientFactory,
 ) AdminService {
 	return &adminServiceImpl{
-		userRepo:             userRepo,
-		groupRepo:            groupRepo,
-		accountRepo:          accountRepo,
-		proxyRepo:            proxyRepo,
-		apiKeyRepo:           apiKeyRepo,
-		redeemCodeRepo:       redeemCodeRepo,
-		userGroupRateRepo:    userGroupRateRepo,
-		userRPMCache:         userRPMCache,
-		billingCacheService:  billingCacheService,
-		proxyProber:          proxyProber,
-		proxyLatencyCache:    proxyLatencyCache,
-		authCacheInvalidator: authCacheInvalidator,
-		entClient:            entClient,
-		settingService:       settingService,
-		defaultSubAssigner:   defaultSubAssigner,
-		userSubRepo:          userSubRepo,
-		privacyClientFactory: privacyClientFactory,
+		userRepo:                 userRepo,
+		groupRepo:                groupRepo,
+		accountRepo:              accountRepo,
+		proxyRepo:                proxyRepo,
+		apiKeyRepo:               apiKeyRepo,
+		redeemCodeRepo:           redeemCodeRepo,
+		userGroupRateRepo:        userGroupRateRepo,
+		userRPMCache:             userRPMCache,
+		billingCacheService:      billingCacheService,
+		proxyProber:              proxyProber,
+		proxyLatencyCache:        proxyLatencyCache,
+		authCacheInvalidator:     authCacheInvalidator,
+		entClient:                entClient,
+		settingService:           settingService,
+		defaultSubAssigner:       defaultSubAssigner,
+		userSubRepo:              userSubRepo,
+		privacyClientFactory:     privacyClientFactory,
+		poolHealthSnapshotSource: newAdminPoolHealthSnapshotSource(groupRepo, accountRepo),
+		poolHealthSnapshotTTL:    time.Minute,
+		poolHealthSnapshotNow:    time.Now,
 	}
 }
 

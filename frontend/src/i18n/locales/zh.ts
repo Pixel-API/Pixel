@@ -2764,23 +2764,20 @@ export default {
       lastUpdated: '更新时间',
       searchPlaceholder: '搜索账号池名称...',
       allHealth: '全部状态',
-      snapshotHint: 'Codex 用量来自最近一次账号使用或主动检测后的快照。',
+      snapshotHint: '当前使用账号池健康快照接口，账号明细请从账号管理进入查看。',
       codex5h: '5小时窗口',
       codex7d: '7天窗口',
-      ungrouped: '未分组账号',
       noPoolDescription: '暂无账号池说明',
       neverUsed: '从未使用',
-      yes: '是',
-      no: '否',
       loadFailed: '加载账号池健康数据失败',
       accountDetails: '账号明细',
-      selectPoolHint: '选择上方账号池后查看账号状态。',
+      selectPoolHint: '选择上方账号池后，可进入账号管理查看账号详情。',
       openAccounts: '打开账号管理',
       selectedPoolSubtitle: '共 {total} 个账号，{schedulable} 个可调度，{problem} 个需关注。',
       emptyTitle: '暂无账号池数据',
-      emptyDescription: '当前没有可展示的 OpenAI 账号池或账号。',
-      noAccountsTitle: '该账号池暂无账号',
-      noAccountsDescription: '可以在账号管理里把 OpenAI/Codex 账号加入此分组。',
+      emptyDescription: '当前没有可展示的 OpenAI 账号池。',
+      noAccountsTitle: '从账号管理查看账号明细',
+      noAccountsDescription: '快照接口仅返回账号池汇总。选择账号池后，请进入账号管理查看账号级详情。',
       rateLimitedCount: '限流 {count} 个',
       summary: {
         pools: '账号池',
@@ -2803,21 +2800,6 @@ export default {
         warning: '关注',
         critical: '严重',
         empty: '空池'
-      },
-      accountStatus: {
-        ready: '可调度',
-        paused: '已暂停',
-        inactive: '未启用',
-        rateLimited: '限流中'
-      },
-      columns: {
-        account: '账号',
-        status: '状态',
-        schedulable: '可调度',
-        codex5h: '5小时',
-        codex7d: '7天',
-        lastUsed: '最近使用',
-        error: '错误信息'
       }
     },
 

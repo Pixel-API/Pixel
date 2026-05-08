@@ -30,3 +30,23 @@ describe('AppSidebar header styles', () => {
     expect(sidebarBrandBlockMatch?.[0]).not.toContain('overflow: hidden;')
   })
 })
+
+describe('AppSidebar user navigation', () => {
+  const buildSelfNavItemsBlock = componentSource.match(/function buildSelfNavItems\(withDashboard: boolean\): NavItem\[] \{[\s\S]*?\n\}/)?.[0] ?? ''
+  const adminNavItemsBlock = componentSource.match(/const adminNavItems = computed\(\(\): NavItem\[] => \{[\s\S]*?\n\}\)/)?.[0] ?? ''
+
+  it('hides account, channel status, and subscription tabs from the user menu', () => {
+    expect(buildSelfNavItemsBlock).not.toContain("path: '/accounts'")
+    expect(buildSelfNavItemsBlock).not.toContain("path: '/monitor'")
+    expect(buildSelfNavItemsBlock).not.toContain("path: '/subscriptions'")
+    expect(buildSelfNavItemsBlock).not.toContain("t('nav.myAccounts')")
+    expect(buildSelfNavItemsBlock).not.toContain("t('nav.channelStatus')")
+    expect(buildSelfNavItemsBlock).not.toContain("t('nav.mySubscriptions')")
+  })
+
+  it('keeps the corresponding admin management entries available', () => {
+    expect(adminNavItemsBlock).toContain("path: '/admin/accounts'")
+    expect(adminNavItemsBlock).toContain("path: '/admin/channels/monitor'")
+    expect(adminNavItemsBlock).toContain("path: '/admin/subscriptions'")
+  })
+})

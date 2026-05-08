@@ -605,5 +605,17 @@ func (s *stubAdminService) ReplaceUserGroup(ctx context.Context, userID, oldGrou
 	return &service.ReplaceUserGroupResult{MigratedKeys: 0}, nil
 }
 
+func (s *stubAdminService) GetPoolHealthSnapshot(ctx context.Context) (*service.PoolHealthSnapshot, error) {
+	return &service.PoolHealthSnapshot{
+		Enabled:   true,
+		Timestamp: time.Now().UTC(),
+		Summary: service.PoolHealthSnapshotSummary{
+			TotalPools:    len(s.groups),
+			TotalAccounts: len(s.accounts),
+		},
+		Pools: []service.PoolHealthSnapshotPool{},
+	}, nil
+}
+
 // Ensure stub implements interface.
 var _ service.AdminService = (*stubAdminService)(nil)

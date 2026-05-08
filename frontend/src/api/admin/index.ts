@@ -32,6 +32,7 @@ import adminPaymentAPI from './payment'
 import revenueAPI from './revenue'
 import affiliatesAPI from './affiliates'
 import accountSharePoliciesAPI from './accountSharePolicies'
+import poolsAPI from './pools'
 
 /**
  * Unified admin API object for convenient access
@@ -65,7 +66,8 @@ export const adminAPI = {
   payment: adminPaymentAPI,
   revenue: revenueAPI,
   affiliates: affiliatesAPI,
-  accountSharePolicies: accountSharePoliciesAPI
+  accountSharePolicies: accountSharePoliciesAPI,
+  pools: poolsAPI
 }
 
 export {
@@ -97,7 +99,8 @@ export {
   adminPaymentAPI,
   revenueAPI,
   affiliatesAPI,
-  accountSharePoliciesAPI
+  accountSharePoliciesAPI,
+  poolsAPI
 }
 
 export default adminAPI
@@ -109,3 +112,4 @@ export type { BackupAgentHealth, DataManagementConfig } from './dataManagement'
 export type { TLSFingerprintProfile, CreateProfileRequest, UpdateProfileRequest } from './tlsFingerprintProfile'
 export type { RevenueSummary, RevenueSummaryParams } from './revenue'
 export type { AccountSharePolicy } from './accountSharePolicies'
+export type { PoolHealthLevel, PoolHealthSnapshot, PoolHealthPool, PoolHealthSummary } from './pools'

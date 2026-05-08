@@ -395,6 +395,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/pools/monitor',
+    name: 'AdminPoolHealthMonitor',
+    component: () => import('@/views/admin/PoolHealthMonitorView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Pool Health Monitor',
+      titleKey: 'admin.poolHealth.title',
+      descriptionKey: 'admin.poolHealth.description'
+    }
+  },
+  {
     path: '/admin/channels',
     redirect: '/admin/channels/pricing'
   },
@@ -665,7 +677,7 @@ router.beforeEach((to, _from, next) => {
     const menuItem = publicItems.find((item) => item.id === id)
       ?? (authStore.isAdmin ? adminSettingsStore.customMenuItems.find((item) => item.id === id) : undefined)
     if (menuItem?.label) {
-      const siteName = appStore.siteName || 'Sub2API'
+      const siteName = appStore.siteName || 'MaxAPI'
       document.title = `${menuItem.label} - ${siteName}`
     } else {
       document.title = resolveDocumentTitle(to.meta.title, appStore.siteName, to.meta.titleKey as string)

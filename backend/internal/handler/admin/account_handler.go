@@ -230,6 +230,17 @@ func (h *AccountHandler) buildAccountResponseWithRuntime(ctx context.Context, ac
 	return item
 }
 
+// GetPoolHealth returns the cached account pool health snapshot.
+// GET /api/v1/admin/pools/health
+func (h *AccountHandler) GetPoolHealth(c *gin.Context) {
+	snapshot, err := h.adminService.GetPoolHealthSnapshot(c.Request.Context())
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, snapshot)
+}
+
 // List handles listing all accounts with pagination
 // GET /api/v1/admin/accounts
 func (h *AccountHandler) List(c *gin.Context) {

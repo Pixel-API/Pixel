@@ -690,6 +690,89 @@ func (r *accountRepository) ListByPlatform(ctx context.Context, platform string)
 	return r.accountsToService(ctx, accounts)
 }
 
+func (r *accountRepository) ListPoolHealthAccounts(ctx context.Context) ([]service.Account, error) {
+	rows, err := r.sql.QueryContext(ctx, `
+		SELECT
+			a.id,
+			a.name,
+			a.platform,
+			a.type,
+			a.status,
+			a.schedulable,
+			a.last_used_at,
+			a.expires_at,
+			a.auto_pause_on_expired,
+			a.rate_limit_reset_at,
+			a.overload_until,
+			a.temp_unschedulable_until,
+			COALESCE(
+				jsonb_build_object(
+					'codex_5h_used_percent', a.extra->'codex_5h_used_percent',
+					'codex_7d_used_percent', a.extra->'codex_7d_used_percent',
+					'quota_limit', a.extra->'quota_limit',
+					'quota_used', a.extra->'quota_used',
+					'quota_daily_limit', a.extra->'quota_daily_limit',
+					'quota_daily_used', a.extra->'quota_daily_used',
+					'quota_daily_reset_mode', a.extra->'quota_daily_reset_mode',
+					'quota_daily_reset_at', a.extra->'quota_daily_reset_at',
+					'quota_weekly_limit', a.extra->'quota_weekly_limit',
+					'quota_weekly_used', a.extra->'quota_weekly_used',
+					'quota_weekly_reset_mode', a.extra->'quota_weekly_reset_mode',
+					'quota_weekly_reset_at', a.extra->'quota_weekly_reset_at'
+				),
+				'{}'::jsonb
+			) AS codex_extra,
+			COALESCE(array_agg(ag.group_id ORDER BY ag.priority) FILTER (WHERE ag.group_id IS NOT NULL), ARRAY[]::bigint[]) AS group_ids
+		FROM accounts a
+		LEFT JOIN account_groups ag ON ag.account_id = a.id
+		WHERE a.deleted_at IS NULL
+			AND a.platform = $1
+		GROUP BY a.id
+		ORDER BY a.id ASC
+	`, service.PlatformOpenAI)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	accounts := make([]service.Account, 0)
+	for rows.Next() {
+		var account service.Account
+		var extraRaw []byte
+		var groupIDs pq.Int64Array
+		if err := rows.Scan(
+			&account.ID,
+			&account.Name,
+			&account.Platform,
+			&account.Type,
+			&account.Status,
+			&account.Schedulable,
+			&account.LastUsedAt,
+			&account.ExpiresAt,
+			&account.AutoPauseOnExpired,
+			&account.RateLimitResetAt,
+			&account.OverloadUntil,
+			&account.TempUnschedulableUntil,
+			&extraRaw,
+			&groupIDs,
+		); err != nil {
+			return nil, err
+		}
+		account.GroupIDs = append([]int64(nil), groupIDs...)
+		account.Extra = map[string]any{}
+		if len(extraRaw) > 0 {
+			if err := json.Unmarshal(extraRaw, &account.Extra); err != nil {
+				return nil, err
+			}
+		}
+		accounts = append(accounts, account)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return accounts, nil
+}
+
 func (r *accountRepository) UpdateLastUsed(ctx context.Context, id int64) error {
 	now := time.Now()
 	_, err := r.client.Account.Update().

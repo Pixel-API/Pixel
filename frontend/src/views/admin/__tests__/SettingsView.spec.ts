@@ -285,7 +285,7 @@ const baseSettingsResponse = {
   default_balance: 0,
   default_concurrency: 1,
   default_subscriptions: [],
-  site_name: "Sub2API",
+  site_name: "MaxAPI",
   site_logo: "",
   site_subtitle: "",
   api_base_url: "",
